@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style type="text/css">
+		* {
+			margin: 0;
+			padding: 0;
+		}
+		html,
+		body {
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+		}
+		canvas {
+			background-color: #000;
+			position: absolute;
+			top: 0;
+			left: 0;
+			z-index: -1;
+		}
+		h1 {
+			font-size: 32px;
+			text-align: center;
+			margin: 80px auto;
+			color: red;
+			text-shadow: 2px 2px white;
+		}
+	</style>
+</head>
+<body>
+	<h1>呐、漫天星空，可否喜欢？</h1>
+	<canvas id="myCanvas"></canvas>
+	<script type="text/javascript">
+	// 获取元素
+	var canvas = document.getElementById("myCanvas");
+
+	// 获取画笔
+	var ctx = canvas.getContext("2d");
+
+
+	// 获取当前视口的高
+	var height = document.documentElement.clientHeight;
+
+	// 获取当前视口的宽
+	var width = document.documentElement.clientWidth;
+
+	// 赋值canvas的宽高
+	canvas.width = width;
+	canvas.height = height;
+
+	// 改变填充色
+	ctx.fillStyle = 'rgba(225, 225, 0)';
+	// 改变描边色
+	ctx.strokeStyle = "rgba(255, 225, 225, .5)";
+	// 改变线宽
+	ctx.lineWidth = .5;
+
+
+	// 定义星星类
+	function Star(ctx, x, y, r) {
+		this.ctx = ctx;
+		this.x = x;
+		this.y = y;
+		this.r = r;
+		this.x_speed = (parseInt(Math.random() * 3) + 1) * Math.pow(-1, parseInt(Math.random() * 10) + 1) / 5;
+		this.y_speed = (parseInt(Math.random() * 3) + 1) * Math.pow(-1, parseInt(Math.random() * 10) + 1) / 5;
+	}
+
+	// 方法要写在原型中
+	Star.prototype.move = function() {
+		this.x -= this.x_speed;
+		this.y -= this.y_speed;
+	}
+
+	// 渲染
+	Star.prototype.render = function() {
+		// 开启路径
+		this.ctx.beginPath();
+		// 绘制弧
+		this.ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+		// 闭合路径
+		this.ctx.closePath();
+		// 填充
+		this.ctx.fill();
+	}
+
+	// 改变x方向
+	Star.prototype.changeX = function() {
+		this.x_speed = - this.x_speed;
+	}
+
+	// 改变y方向
+	Star.prototype.changeY = function() {
+		this.y_speed = - this.y_speed;
+	}
+
+	// 实例化对象
+	// var star = new Star(ctx, Math.random() * width, Math.random() * height, 2);
+	// star.render();
+
+	// 定义数组， 用于存放星星对象
+	var arr = [];
+
+	// 创建多个星星
+	for (var i = 0; i < 130; i++) {
+		arr.push(new Star(ctx, Math.random() * width, Math.random() * height, 1));
+	}
+
+	// 创建鼠标星星对象
+	var mouse_star = new Star(ctx, 0, 0, 2);
+	// 给document添加鼠标移动事件
+	document.onmousemove = function(e) {
+		// 获取鼠标位于视口中的位置
+		var x = e.clientX;
+		var y = e.clientY;
+
+		// 赋值mouse_star
+		mouse_star.x = x;
+		mouse_star.y = y;
+	}
+
+	
+
+	// 开启定时器
+	var timer = setInterval(function() {
+		// 清屏
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		// 渲染星星对象
+		mouse_star.render();
+		
+		arr.forEach(function(value, index) {
+			// 移动
+			value.move();
+
+			if (value.x < 0 || value.x > width) {
+				value.changeX();
+			}
+
+			if (value.y < 0 || value.y > height) {
+				value.changeY();
+			}
+			// 渲染
+			value.render();
+		})
+
+		// 循环判断
+		arr.forEach(function(value, index) {
+			// value表示每一个星星， 我们应该拿着其中的一个星星与其它的所有星星进行比较
+			for (var i = index + 1; i < arr.length; i++) {
+				// 当满足一定的条件时候可以连线
+				if (Math.abs(value.x - arr[i].x) < 40 && Math.abs(value.y - arr[i].y) < 40) {
+					// 连线
+					line(value.x, value.y, arr[i].x, arr[i].y);
+				}
+			}
+
+
+			// 判断鼠标星星对象与其它所有星星对象之间的关系
+			if (Math.abs(value.x - mouse_star.x) < 150 && Math.abs(value.y - mouse_star.y) < 150) {
+				// 连线
+				line(value.x, value.y, mouse_star.x, mouse_star.y);
+			}
+		}) 
+ 	}, 20)
+
+
+ 	// 封装一个函数， 传递两个点， 绘制两个点之间的线段
+ 	function line(x1, y1, x2, y2) {
+ 		// 开启路径
+ 		ctx.beginPath();
+ 		// 移动画笔到某个地方
+ 		ctx.moveTo(x1, y1);
+ 		// 绘制线段
+ 		ctx.lineTo(x2, y2);
+ 		// 闭合路径
+ 		ctx.closePath();
+ 		// 描边
+ 		ctx.stroke();
+ 	}
+
+
+ 	// 给document添加点击事件
+ 	document.onclick = function(e) {
+ 		for (var i = 0; i < 5; i++) {
+ 			arr.push(new Star(ctx, e.clientX, e.clientY, 1));
+	 		// 删除数组中第一项
+	 		arr.shift();
+ 		}
+ 	}
+	</script>
+</body>
+</html>
